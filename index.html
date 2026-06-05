@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>日文五十音練習</title>
+
+<style>
+body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:#f5f7fa;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container{
+    width:90%;
+    max-width:600px;
+    text-align:center;
+}
+
+.card{
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+h1{
+    margin-top:0;
+    color:#333;
+}
+
+#question{
+    font-size:70px;
+    font-weight:bold;
+    margin:40px 0;
+    color:#222;
+}
+
+.answer{
+    margin-top:20px;
+}
+
+.kana{
+    font-size:50px;
+    margin:10px;
+    color:#444;
+}
+
+.hidden{
+    display:none;
+}
+
+button{
+    margin-top:30px;
+    border:none;
+    border-radius:12px;
+    padding:15px 40px;
+    font-size:22px;
+    cursor:pointer;
+    background:#4f46e5;
+    color:white;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+.note{
+    margin-top:20px;
+    color:#777;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h1>日文五十音練習</h1>
+
+        <div id="question">載入中...</div>
+
+        <div id="answerArea" class="answer hidden">
+            <div class="kana" id="answerText"></div>
+        </div>
+
+        <button id="mainButton">看答案</button>
+
+        <div class="note">
+            先寫答案 → 再點看答案
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+/////////////////////////////////////
+// 🔵 五十音資料
+/////////////////////////////////////
+
+const kanaData = [
+{romaji:"a",hiragana:"あ",katakana:"ア"},
+{romaji:"i",hiragana:"い",katakana:"イ"},
+{romaji:"u",hiragana:"う",katakana:"ウ"},
+{romaji:"e",hiragana:"え",katakana:"エ"},
+{romaji:"o",hiragana:"お",katakana:"オ"},
+
+{romaji:"ka",hiragana:"か",katakana:"カ"},
+{romaji:"ki",hiragana:"き",katakana:"キ"},
+{romaji:"ku",hiragana:"く",katakana:"ク"},
+{romaji:"ke",hiragana:"け",katakana:"ケ"},
+{romaji:"ko",hiragana:"こ",katakana:"コ"},
+
+{romaji:"sa",hiragana:"さ",katakana:"サ"},
+{romaji:"shi",hiragana:"し",katakana:"シ"},
+{romaji:"su",hiragana:"す",katakana:"ス"},
+{romaji:"se",hiragana:"せ",katakana:"セ"},
+{romaji:"so",hiragana:"そ",katakana:"ソ"},
+
+{romaji:"ta",hiragana:"た",katakana:"タ"},
+{romaji:"chi",hiragana:"ち",katakana:"チ"},
+{romaji:"tsu",hiragana:"つ",katakana:"ツ"},
+{romaji:"te",hiragana:"て",katakana:"テ"},
+{romaji:"to",hiragana:"と",katakana:"ト"},
+
+{romaji:"na",hiragana:"な",katakana:"ナ"},
+{romaji:"ni",hiragana:"に",katakana:"ニ"},
+{romaji:"nu",hiragana:"ぬ",katakana:"ヌ"},
+{romaji:"ne",hiragana:"ね",katakana:"ネ"},
+{romaji:"no",hiragana:"の",katakana:"ノ"},
+
+{romaji:"ha",hiragana:"は",katakana:"ハ"},
+{romaji:"hi",hiragana:"ひ",katakana:"ヒ"},
+{romaji:"fu",hiragana:"ふ",katakana:"フ"},
+{romaji:"he",hiragana:"へ",katakana:"ヘ"},
+{romaji:"ho",hiragana:"ほ",katakana:"ホ"},
+
+{romaji:"ma",hiragana:"ま",katakana:"マ"},
+{romaji:"mi",hiragana:"み",katakana:"ミ"},
+{romaji:"mu",hiragana:"む",katakana:"ム"},
+{romaji:"me",hiragana:"め",katakana:"メ"},
+{romaji:"mo",hiragana:"も",katakana:"モ"},
+
+{romaji:"ya",hiragana:"や",katakana:"ヤ"},
+{romaji:"yu",hiragana:"ゆ",katakana:"ユ"},
+{romaji:"yo",hiragana:"よ",katakana:"ヨ"},
+
+{romaji:"ra",hiragana:"ら",katakana:"ラ"},
+{romaji:"ri",hiragana:"り",katakana:"リ"},
+{romaji:"ru",hiragana:"る",katakana:"ル"},
+{romaji:"re",hiragana:"れ",katakana:"レ"},
+{romaji:"ro",hiragana:"ろ",katakana:"ロ"},
+
+{romaji:"wa",hiragana:"わ",katakana:"ワ"},
+{romaji:"wo",hiragana:"を",katakana:"ヲ"},
+
+{romaji:"n",hiragana:"ん",katakana:"ン"}
+];
+
+/////////////////////////////////////
+// 狀態
+/////////////////////////////////////
+
+let current = null;
+let showingAnswer = false;
+
+const questionEl = document.getElementById("question");
+const answerArea = document.getElementById("answerArea");
+const answerText = document.getElementById("answerText");
+const button = document.getElementById("mainButton");
+
+/////////////////////////////////////
+// 安全出題
+/////////////////////////////////////
+
+function getKanaQuestion(){
+
+    try{
+
+        if(!kanaData || kanaData.length === 0){
+            questionEl.textContent = "資料錯誤";
+            return;
+        }
+
+        const index = Math.floor(Math.random() * kanaData.length);
+        current = kanaData[index];
+
+        if(!current){
+            questionEl.textContent = "載入失敗";
+            return;
+        }
+
+        questionEl.textContent = current.romaji;
+
+        answerArea.classList.add("hidden");
+
+        button.textContent = "看答案";
+
+        showingAnswer = false;
+
+    }catch(e){
+        console.log(e);
+        questionEl.textContent = "發生錯誤";
+    }
+}
+
+/////////////////////////////////////
+// 按鈕控制（防 crash）
+/////////////////////////////////////
+
+button.addEventListener("click",()=>{
+
+    try{
+
+        if(!current){
+            getKanaQuestion();
+            return;
+        }
+
+        if(!showingAnswer){
+
+            answerText.textContent =
+                (current.hiragana || "") + " / " + (current.katakana || "");
+
+            answerArea.classList.remove("hidden");
+
+            button.textContent = "下一題";
+
+            showingAnswer = true;
+
+        }else{
+
+            getKanaQuestion();
+        }
+
+    }catch(e){
+        console.log("Button error:", e);
+        questionEl.textContent = "發生錯誤，請重整";
+    }
+
+});
+
+/////////////////////////////////////
+// 初始化（保險）
+/////////////////////////////////////
+
+function init(){
+
+    try{
+        getKanaQuestion();
+    }catch(e){
+        console.log("Init error:", e);
+        questionEl.textContent = "初始化失敗";
+    }
+}
+
+init();
+
+</script>
+
+</body>
+</html>
